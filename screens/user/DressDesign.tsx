@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Measurements, Fabric, Design, Sex, SleeveType } from '../../types';
-import { generateDressDesign, editDressDesign } from '../../services/geminiService';
+import { generateDesignViews, editDressDesign } from '../../services/geminiService';
 import SpinnerIcon from '../../components/icons/SpinnerIcon';
 import EditIcon from '../../components/icons/EditIcon';
 
@@ -45,8 +44,7 @@ const DressDesign: React.FC = () => {
         setIsLoading(true);
         setGeneratedDesigns([]);
         try {
-            const promises = Array(4).fill(0).map(() => generateDressDesign(measurements, selectedFabrics, selectedDesign));
-            const results = await Promise.all(promises);
+            const results = await generateDesignViews(measurements, selectedFabrics, selectedDesign);
             setGeneratedDesigns(results);
             setStep(3);
         } catch (error) {
@@ -158,15 +156,19 @@ const DressDesign: React.FC = () => {
                     </div>
                 );
             case 3: // AI Generation
+                 const viewLabels = ["Front View", "Back View", "Detail Shot", "Lifestyle View"];
                  return (
                     <div>
-                        <h3 className="text-xl font-serif text-text-main mb-4">Step 3: Review & Refine Your AI Designs</h3>
-                        <p className="text-text-light mb-4">Our AI has created these unique designs for you. Select one as your final choice, or edit them to perfection.</p>
+                        <h3 className="text-xl font-serif text-text-main mb-4">Step 3: Review Your Design From Every Angle</h3>
+                        <p className="text-text-light mb-4">Our AI has generated these views of your design. Select your favorite as the final version, or edit any of them to perfection.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {generatedDesigns.map((src, index) => (
                                 <div key={index} className={`border-4 rounded-lg p-2 ${finalChoice === src ? 'border-accent' : 'border-transparent'}`}>
                                     <div className="relative">
                                         <img src={src} alt={`Generated Design ${index + 1}`} className="w-full rounded-md shadow-lg" />
+                                        <div className="absolute top-2 left-2 bg-black/50 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                            {viewLabels[index]}
+                                        </div>
                                         {isLoading && <div className="absolute inset-0 bg-white/70 flex items-center justify-center"><SpinnerIcon className="w-12 h-12 text-accent"/></div>}
                                     </div>
                                     <div className="mt-2 space-y-2">
@@ -198,7 +200,7 @@ const DressDesign: React.FC = () => {
                 {isLoading && step !== 3 ? (
                     <div className="text-center p-12">
                         <SpinnerIcon className="w-16 h-16 text-accent mx-auto mb-4"/>
-                        <p className="text-lg text-text-main font-semibold animate-pulse">Our AI is designing your perfect dress...</p>
+                        <p className="text-lg text-text-main font-semibold animate-pulse">Our AI is rendering your design from every angle...</p>
                         <p className="text-text-light">This might take a moment.</p>
                     </div>
                 ) : (

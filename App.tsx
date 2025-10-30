@@ -31,9 +31,8 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    // FIX: Explicitly passing the children prop to work around a potential type-checker issue.
+    <AppProvider children={<AppContent />} />
   );
 };
 
