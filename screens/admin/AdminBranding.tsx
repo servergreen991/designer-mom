@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { AppSettings, Theme } from '../../types';
@@ -14,10 +13,14 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 const AdminBranding: React.FC = () => {
-    const { appSettings, theme, setAppSettings, setTheme } = useAppContext();
+    const { 
+        appSettings, theme, setAppSettings, setTheme, 
+        importData, users, fabrics, designs, orders, messages, feedback 
+    } = useAppContext();
     const [localSettings, setLocalSettings] = useState<AppSettings>(appSettings);
     const [localTheme, setLocalTheme] = useState<Theme>(theme);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [successMessage, setSuccessMessage] = useState('');
 
     const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setLocalSettings({ ...localSettings, [e.target.name]: e.target.value });
@@ -39,12 +42,49 @@ const AdminBranding: React.FC = () => {
         e.preventDefault();
         setAppSettings(localSettings);
         setTheme(localTheme);
+        setSuccessMessage('Settings saved successfully!');
         setShowSuccess(true);
     };
 
+    const handleExport = () => {
+        const exportData = { users, fabrics, designs, orders, messages, feedback, appSettings, theme };
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        const exportFileDefaultName = `designer_mom_backup_${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        document.body.appendChild(linkElement);
+        linkElement.click();
+        document.body.removeChild(linkElement);
+    };
+
+    const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target?.result;
+                if (typeof text === 'string') {
+                    if (window.confirm("Importing data will overwrite all current settings and content. This action cannot be undone. Are you sure you want to proceed?")) {
+                       if (importData(text)) {
+                           setSuccessMessage('Data imported successfully! The page will now reload.');
+                           setShowSuccess(true);
+                           setTimeout(() => window.location.reload(), 2000);
+                       }
+                    }
+                }
+            };
+            reader.readAsText(file);
+        }
+        event.target.value = ''; // Reset file input
+    };
+
+
     return (
         <div className="p-6 bg-secondary min-h-full">
-             {showSuccess && <SuccessPopup message="Settings saved successfully!" onClose={() => setShowSuccess(false)} />}
+             {showSuccess && <SuccessPopup message={successMessage} onClose={() => setShowSuccess(false)} />}
             <h2 className="text-3xl font-serif text-accent mb-6">Branding & Settings</h2>
             
             <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md space-y-8">
@@ -76,6 +116,25 @@ const AdminBranding: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                         <FileInput label="Application Logo" name="logo" currentImage={localSettings.logo} onChange={handleFileChange} />
                         <FileInput label="UPI QR Code" name="qrCodeUrl" currentImage={localSettings.qrCodeUrl} onChange={handleFileChange} />
+                    </div>
+                </div>
+                
+                 {/* Data Management Section */}
+                 <div>
+                    <h3 className="text-xl font-serif text-text-main border-b border-primary pb-2 mb-4">Data Management</h3>
+                    <p className="text-sm text-text-light mb-4">
+                        Export all application data (users, orders, content, settings) to a JSON file for backup. 
+                        You can store this file securely, for example, in a private GitHub repository. 
+                        Importing a backup file will overwrite all existing data.
+                    </p>
+                    <div className="flex items-center gap-4">
+                        <button type="button" onClick={handleExport} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 transition-colors">
+                            Export Data
+                        </button>
+                        <label className="bg-green-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-700 transition-colors cursor-pointer">
+                            <span>Import Data</span>
+                            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+                        </label>
                     </div>
                 </div>
 

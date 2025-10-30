@@ -1,8 +1,6 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { User, Fabric, Design, Order, Message, AppSettings, Theme, Feedback, Measurements, OrderStatus } from '../types';
-import { mockData as mockDataFile } from './mockData';
 
 // Mock Data Module
 const createMockData = () => {
@@ -75,6 +73,7 @@ interface AppContextType {
     setAppSettings: (settings: AppSettings) => void;
     setTheme: (theme: Theme) => void;
     setCurrentView: (view: 'home' | 'auth') => void;
+    importData: (data: string) => boolean;
 }
 
 // Create the context
@@ -204,6 +203,30 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setFeedback(prev => [...prev, newFeedback]);
     };
 
+    const importData = (data: string): boolean => {
+        try {
+            const parsedData = JSON.parse(data);
+            if (!parsedData.users || !parsedData.fabrics || !parsedData.designs || !parsedData.orders || !parsedData.messages || !parsedData.feedback || !parsedData.appSettings || !parsedData.theme) {
+                throw new Error("Invalid data file format.");
+            }
+            setUsers(parsedData.users);
+            setFabrics(parsedData.fabrics);
+            setDesigns(parsedData.designs);
+            setOrders(parsedData.orders);
+            setMessages(parsedData.messages);
+            setFeedback(parsedData.feedback);
+            setAppSettings(parsedData.appSettings);
+            setTheme(parsedData.theme);
+            // Log out current user to prevent inconsistent state
+            logout();
+            return true;
+        } catch (error) {
+            console.error("Failed to import data:", error);
+            alert(`Failed to import data. Please check the file format. Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return false;
+        }
+    };
+
     const value = {
         currentUser, users, fabrics, designs, orders, messages, feedback, appSettings, theme, currentView,
         login, logout, register,
@@ -211,7 +234,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         addFabric, deleteFabric, addDesign, deleteDesign,
         addOrder, updateOrder,
         addMessage, addFeedback,
-        setAppSettings, setTheme, setCurrentView
+        setAppSettings, setTheme, setCurrentView,
+        importData
     };
 
     return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

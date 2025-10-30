@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { User, UserRole } from '../../types';
@@ -19,12 +18,11 @@ const AdminUserManagement: React.FC = () => {
     
     const handleDeleteUser = (userId: string) => {
         const userHasOrders = orders.some(order => order.userId === userId);
-        if (userHasOrders) {
-            alert("This user cannot be deleted because they have existing orders. Please resolve their orders first.");
-            return;
-        }
+        const confirmationMessage = userHasOrders
+            ? 'This user has existing orders. Deleting the user will not delete their orders, but may make them harder to manage. Are you sure you want to proceed?'
+            : 'Are you sure you want to delete this user? This action cannot be undone.';
 
-        if(window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+        if(window.confirm(confirmationMessage)) {
             deleteUser(userId);
             setSuccessMessage('User deleted successfully!');
         }

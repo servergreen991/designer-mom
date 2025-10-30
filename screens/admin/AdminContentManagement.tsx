@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '../../contexts/AppContext';
 import { Design, Fabric } from '../../types';
@@ -15,7 +14,7 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 const AdminContentManagement: React.FC = () => {
-    const { fabrics, designs, addFabric, deleteFabric, addDesign, deleteDesign } = useAppContext();
+    const { fabrics, designs, orders, addFabric, deleteFabric, addDesign, deleteDesign } = useAppContext();
     
     const [newFabricName, setNewFabricName] = useState('');
     const [newFabricImage, setNewFabricImage] = useState<File | null>(null);
@@ -49,14 +48,24 @@ const AdminContentManagement: React.FC = () => {
     };
 
     const handleDeleteFabric = (id: string) => {
-        if(window.confirm('Are you sure you want to delete this fabric?')) {
+        const fabricInUse = orders.some(order => order.selectedFabrics.some(f => f.id === id));
+        const confirmationMessage = fabricInUse 
+            ? 'This fabric is used in existing orders. Deleting it will not affect those orders, but it will be unavailable for new ones. Are you sure?'
+            : 'Are you sure you want to delete this fabric?';
+
+        if(window.confirm(confirmationMessage)) {
             deleteFabric(id);
             setSuccessMessage('Fabric deleted successfully!');
         }
     };
 
     const handleDeleteDesign = (id: string) => {
-        if(window.confirm('Are you sure you want to delete this design?')) {
+        const designInUse = orders.some(order => order.selectedDesign.id === id);
+        const confirmationMessage = designInUse
+            ? 'This design style is used in existing orders. Deleting it will not affect those orders, but it will be unavailable for new ones. Are you sure?'
+            : 'Are you sure you want to delete this design?';
+
+        if(window.confirm(confirmationMessage)) {
             deleteDesign(id);
             setSuccessMessage('Design deleted successfully!');
         }
@@ -82,6 +91,7 @@ const AdminContentManagement: React.FC = () => {
                     <button type="submit" className="bg-accent text-white font-bold py-2 px-6 rounded-md hover:bg-opacity-90 transition-colors whitespace-nowrap">Add Fabric</button>
                 </form>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {fabrics.length === 0 && <p className="col-span-full text-center text-text-light">No fabrics uploaded yet.</p>}
                     {fabrics.map((fabric: Fabric) => (
                         <div key={fabric.id} className="relative group border rounded-lg overflow-hidden shadow">
                             <img src={fabric.imageUrl} alt={fabric.name} className="w-full h-32 object-cover" />
@@ -111,6 +121,7 @@ const AdminContentManagement: React.FC = () => {
                     <button type="submit" className="bg-accent text-white font-bold py-2 px-6 rounded-md hover:bg-opacity-90 transition-colors whitespace-nowrap">Add Design</button>
                 </form>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {designs.length === 0 && <p className="col-span-full text-center text-text-light">No designs uploaded yet.</p>}
                     {designs.map((design: Design) => (
                          <div key={design.id} className="relative group border rounded-lg overflow-hidden shadow">
                             <img src={design.imageUrl} alt={design.name} className="w-full h-32 object-cover" />
